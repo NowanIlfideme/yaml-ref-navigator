@@ -1,15 +1,15 @@
 # YAML Ref Navigator
 
 Enable jump-to-definition within YAML for references of style `${foo.bar}`.
-This enables Ctrl+Click or F12 (or whatever other shortcut you have).
+This enables `Ctrl + Left Click`, `F12` or whatever other shortcut you have.
+
+![Simple Usage Example](images/example1.webp)
 
 ## Features
 
 - Supports nested keys like `${foo.bar.baz}`
 - Works across multiple YAML files in your workspace or open editors
-
-<!-- > Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow. -->
-<!-- TODO: Add gif -->
+- Support custom regexes for defining patterns (see settings below).
 
 **WARNING**: Developed using generative coding tools by an experienced developer who is trying TypeScript for the first time.
 There are some tests, and nothing is ever modified, so the risk should be minimal; it might just not work.
@@ -17,21 +17,18 @@ There are some tests, and nothing is ever modified, so the risk should be minima
 ## Usage
 
 1. Install the extension
-2. Open a `.yaml` file
-3. Ctrl+Click on a `${foo.bar}` reference
+2. Open a `.yaml` or `.yml` file
+3. Ctrl+Click or F12 (or whatever shortcut you have for 'Jump to Definition') on a `${foo.bar}` reference
 
-## Example
+If the reference is not found, you will get a warning.
 
-```yaml
-ref: ${foo.bar}
+In case of multiple documents, it will find all valid definitions:
 
-foo:
-  bar: "Hello world!"
-```
+![Multiple References Example](images/example2.webp)
 
 ## Requirements
 
-No external requirements besides `yaml` package.
+No external requirements besides [`eemeli/yaml` package](https://eemeli.org/yaml/#yaml) (should auto-install).
 
 We strongly support installing the
 [YAML Language Support by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
@@ -43,7 +40,7 @@ extension, which uses `yaml-language-server`.
 - `yamlRefNavigator.referencePatterns` : A list of regular expression patterns
   that we will parse as a YAML reference pattern. These expressions must have exactly one capture group
   and not be anchored. The default is `"\\$\\{([a-zA-Z0-9_\\-.]+)\\}"` such as `${foo.bar-baz.MyName9}`.
-  It is not particuarly robust, so you may have some false positives. Unmatched
+  It is not particuarly robust, so you may have some false positives.
 - `yamlRefNavigator.debug` : Whether to give debugging popups when resolving keys.
 
 ## Known Issues

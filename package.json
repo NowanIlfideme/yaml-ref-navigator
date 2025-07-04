@@ -1,7 +1,7 @@
 {
   "name": "yaml-ref-navigator",
   "displayName": "YAML Reference Navigator",
-  "description": "Jump to definition for YAML references of form ${foo.bar}",
+  "description": "Jump to definition for YAML references",
   "publisher": "NowanIlfideme",
   "icon": "images/logo.png",
   "version": "0.2.1",

@@ -1,4 +1,4 @@
 env: "dev"
 
 flags:
-  autoreload: false
+  autoreload: true
