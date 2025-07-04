@@ -37,7 +37,7 @@ function findMatchingKeys(obj: any, lineCounter: LineCounter): Map<string, vscod
 
 
 
-async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri, content: string): Promise<vscode.Location[]> {
+export async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri, content: string): Promise<vscode.Location[]> {
 	const lineCounter = new LineCounter();
 	const doc = parseDocument(content, { lineCounter });
 
@@ -51,7 +51,7 @@ async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri, conten
 	return [];
 }
 
-async function findAllYamlDefinitions(refText: string): Promise<vscode.Location[]> {
+export async function findAllYamlDefinitions(refText: string): Promise<vscode.Location[]> {
 	const results: vscode.Location[] = [];
 
 	// 1. Search open documents

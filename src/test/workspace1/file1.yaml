@@ -1,0 +1,4 @@
+ref1: ${foo.bar}
+
+foo:
+  bar: "found in file1"

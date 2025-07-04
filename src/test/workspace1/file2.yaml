@@ -1,0 +1,4 @@
+ref2: ${baz.qux}
+
+baz:
+  qux: "found in file2"
