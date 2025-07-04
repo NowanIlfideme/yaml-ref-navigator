@@ -34,6 +34,7 @@ foo:
 No external requirements besides `yaml` package.
 
 ## Extension Settings
+
 <!-- 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
@@ -42,7 +43,10 @@ For example:
 This extension contributes the following settings:
 
 - `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something. -->
+- `myExtension.thing`: Set to `blah` to do something.
+- -->
+
+No extension settings currently. Probably should support multiple reference types via regex.
 
 ## Known Issues
 
