@@ -54,6 +54,10 @@ extension, which uses `yaml-language-server`.
 
 See the [changelog](./CHANGELOG.md) for more details.
 
+### 0.2.2
+
+Better example documentation, including animated example.
+
 ### 0.2.1
 
 Update readmes, warnings etc. and re-publish.

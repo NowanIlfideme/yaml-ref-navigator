@@ -8,9 +8,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [UNRELEASED]
 
-## [0.2.1]
+## [0.2.2] - 2025-07-04
 
-### Change
+### Changed
+
+Improved documentation, including example gifs.
+
+## [0.2.1] - 2025-07-04
+
+### Changed
 
 - Updated this changelog and readme for 0.2.1
 - Add logo
