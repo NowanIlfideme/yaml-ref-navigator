@@ -1,0 +1,2 @@
+ref1: ${foo.bar}
+ref2: <<baz.qux>>

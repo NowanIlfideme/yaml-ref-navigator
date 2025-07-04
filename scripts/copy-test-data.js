@@ -2,13 +2,24 @@
 const fs = require('fs');
 const path = require('path');
 
-const src = path.join(__dirname, '../src/test/workspace1');
-const dest = path.join(__dirname, '../out/test/workspace1');
+const srcRoot = path.join(__dirname, '../src/test');
+const destRoot = path.join(__dirname, '../out/test');
 
-fs.mkdirSync(dest, { recursive: true });
+function copyRecursive(srcDir, destDir) {
+    fs.mkdirSync(destDir, { recursive: true });
 
-for (const file of fs.readdirSync(src)) {
-    if (file.endsWith('.yaml') | file.endsWith('.yml')) {
-        fs.copyFileSync(path.join(src, file), path.join(dest, file));
+    for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+        const srcPath = path.join(srcDir, entry.name);
+        const destPath = path.join(destDir, entry.name);
+
+        if (entry.isDirectory()) {
+            copyRecursive(srcPath, destPath); // recurse into subdirectory
+        } else if (entry.name.endsWith('.yaml') || entry.name.endsWith('.yml')) {
+            fs.copyFileSync(srcPath, destPath);
+        }
     }
 }
+
+// Copy everything from src/test/* to out/test/*
+copyRecursive(srcRoot, destRoot);
+console.log(`✅ Copied YAML test data from ${srcRoot} to ${destRoot}`);

@@ -5,11 +5,11 @@ import assert from 'assert';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { findAllYamlDefinitions } from '../extension'; // Adjust path if needed
+import { findAllYamlDefinitions } from '../../extension'; // Adjust path if needed
 
 
-suite('YAML Ref Navigator Multi-File Tests', () => {
-	const workspaceRoot = path.join(__dirname, 'workspace1');
+suite('YAML Ref Navigator Multi-File Tests (Workspace 1)', () => {
+	const workspaceRoot = path.resolve(__dirname);
 	let documents: Record<string, vscode.TextDocument> = {};
 
 
@@ -82,4 +82,52 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 			}
 		});
 	});
+});
+
+
+suite('YAML Ref Navigator Multi-Pattern Tests (Workspace 1)', () => {
+	const workspaceRoot = path.resolve(__dirname);
+	let doc: vscode.TextDocument;
+
+	suiteSetup(async () => {
+		// REMOVEME: Testing stuff
+		console.log('Workspace folders:', vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath));
+		const cfg = vscode.workspace.getConfiguration('yamlRefNavigator');
+		console.log('Reference patterns:', cfg.get('referencePatterns'));
+
+		// Manual override
+		const config = vscode.workspace.getConfiguration();
+		await config.update(
+			'yamlRefNavigator.referencePatterns',
+			['\\$\\{([a-zA-Z0-9_\\-.]+)\\}', '<<([a-zA-Z0-9_.:]+)>>'],
+			vscode.ConfigurationTarget.Workspace // or ConfigurationTarget.Global for global
+		);
+
+		// Read
+		doc = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file-multi-pattern.yaml'));
+		await vscode.window.showTextDocument(doc, { preview: false });
+	});
+
+	const testCases = [
+		{ pattern: '${foo.bar}', expectedFile: 'file1.yaml', description: 'Dollar brace pattern' },
+		{ pattern: '<<baz.qux>>', expectedFile: 'file2.yaml', description: 'Angle bracket pattern' },
+	];
+
+	for (const { pattern, expectedFile, description } of testCases) {
+		test(`Find reference using ${description}`, async () => {
+			const pos = doc.getText().indexOf(pattern);
+			assert.notStrictEqual(pos, -1, `Reference pattern ${pattern} not found in test file`);
+			const position = doc.positionAt(pos);
+			const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+				'vscode.executeDefinitionProvider',
+				doc.uri,
+				position
+			);
+			assert(locations && locations.length > 0, `Should find definitions for ${pattern}`);
+			assert(
+				locations.some(loc => loc.uri.fsPath.endsWith(expectedFile)),
+				`Definition should be in ${expectedFile}`
+			);
+		});
+	}
 });
