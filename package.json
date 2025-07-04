@@ -14,6 +14,7 @@
     "url": "https://github.com/NowanIlfideme/yaml-ref-navigator"
   },
   "readme": "README.md",
+  "license": "MIT",
   "keywords": [
     "yaml",
     "references",
