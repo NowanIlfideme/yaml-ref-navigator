@@ -3,7 +3,7 @@
   "publisher": "NowanIlfideme",
   "displayName": "YAML Reference Navigator",
   "description": "Jump to definition for YAML references of form ${foo.bar}",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.101.0"
   },
