@@ -2,7 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'yaml';  // npm install yaml
 
 // This method is called when your extension is activated
@@ -18,39 +17,40 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-async function findYamlDefinition(refText: string): Promise<vscode.Location[]> {
+async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri, content: string): Promise<vscode.Location[]> {
 	const results: vscode.Location[] = [];
+	const lines = content.split('\n');
 
-	// 1. Search open documents (even untitled or outside workspace)
-	for (const doc of vscode.workspace.textDocuments) {
-		if (!doc.fileName.endsWith('.yaml') && !doc.fileName.endsWith('.yml')) { continue; }
-
-		const lines = doc.getText().split('\n');
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			const trimmed = line.trimStart();
-
-			if (trimmed.startsWith(`${refText}:`)) {
-				const position = new vscode.Position(i, line.indexOf(refText));
-				results.push(new vscode.Location(doc.uri, position));
-			}
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		if (line.trimStart().startsWith(`${refText}:`)) {
+			const position = new vscode.Position(i, line.indexOf(refText));
+			results.push(new vscode.Location(uri, position));
 		}
 	}
+	return results;
+}
 
-	// Search workspace
+
+async function findAllYamlDefinitions(refText: string): Promise<vscode.Location[]> {
+	const results: vscode.Location[] = [];
+
+	// 1. Search open documents
+	for (const doc of vscode.workspace.textDocuments) {
+		if (!doc.fileName.endsWith('.yaml') && !doc.fileName.endsWith('.yml')) { continue; }
+		const matches = await findYamlDefinitionInFile(refText, doc.uri, doc.getText());
+		results.push(...matches);
+	}
+
+	// 2. Search YAML files in workspace (skip already-open ones)
 	const files = await vscode.workspace.findFiles('**/*.y?(a)ml');
+	const openPaths = new Set(vscode.workspace.textDocuments.map(doc => doc.uri.fsPath));
 
 	for (const file of files) {
+		if (openPaths.has(file.fsPath)) { continue; } // skip duplicates
 		const content = fs.readFileSync(file.fsPath, 'utf-8');
-		const lines = content.split('\n');
-
-		// Walk through keys and match ref
-		for (let i = 0; i < lines.length; i++) {
-			if (lines[i].trimStart().startsWith(`${refText}:`)) {
-				const position = new vscode.Position(i, lines[i].indexOf(refText));
-				results.push(new vscode.Location(file, position));
-			}
-		}
+		const matches = await findYamlDefinitionInFile(refText, file, content);
+		results.push(...matches);
 	}
 
 	return results;
@@ -63,20 +63,17 @@ class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 	): Promise<vscode.Definition | null> {
+		// Figure out if we have a definition here
 		const wordRange = document.getWordRangeAtPosition(position, /\$\{[a-zA-Z0-9_.:]+\}/);
 		if (!wordRange) { return null; }
-		// finds ${foo.bar} and such
-
 		const match = document.getText(wordRange).match(/^\$\{([a-zA-Z0-9_.:]+)\}$/);
 		if (!match) { return null; }
+		const refText = match[1];
 
-		const refText = match[1];        // first sub-match, i.e. foo.bar
-
-		// Show a message so we know it ran
+		// To make sure we know
 		vscode.window.showInformationMessage(`🔍 Looking for definition of "${refText}"`);
 
-		// return new vscode.Location(document.uri, new vscode.Position(0, 0));
-		const locations = await findYamlDefinition(refText);
+		const locations = await findAllYamlDefinitions(refText);
 		return locations.length ? locations : null;
 	}
 }
