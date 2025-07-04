@@ -38,8 +38,12 @@ function findMatchingKeys(obj: any, lineCounter: LineCounter): Map<string, vscod
 
 
 export async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri, content: string): Promise<vscode.Location[]> {
+	const yamlVersion = vscode.workspace
+		.getConfiguration('yamlRefNavigator')
+		.get<'1.1' | '1.2' | 'next'>('yamlVersion', '1.2');
+
 	const lineCounter = new LineCounter();
-	const doc = parseDocument(content, { lineCounter });
+	const doc = parseDocument(content, { version: yamlVersion, lineCounter });
 
 	const keyMap = findMatchingKeys(doc, lineCounter);
 	const position = keyMap.get(refText);
@@ -82,18 +86,50 @@ class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 	): Promise<vscode.Definition | null> {
-		// Figure out if we have a definition here
-		const wordRange = document.getWordRangeAtPosition(position, /\$\{[a-zA-Z0-9_.:]+\}/);
-		if (!wordRange) { return null; }
-		const match = document.getText(wordRange).match(/^\$\{([a-zA-Z0-9_.:]+)\}$/);
-		if (!match) { return null; }
-		const refText = match[1];
+		const patternStrings: string[] = vscode.workspace.getConfiguration('yamlRefNavigator').get('referencePatterns') || [];
 
-		// To make sure we know
-		vscode.window.showInformationMessage(`🔍 Looking for definition of "${refText}"`);
+		for (const pattern of patternStrings) {
+			const rangeRegex = new RegExp(pattern);
 
-		const locations = await findAllYamlDefinitions(refText);
-		return locations.length ? locations : null;
+			// Auto-anchor for matchRegex
+			const isAnchored = pattern.startsWith('^') || pattern.endsWith('$');
+			const matchRegex = new RegExp(isAnchored ? pattern : `^${pattern}$`);
+
+			const wordRange = document.getWordRangeAtPosition(position, rangeRegex);
+			if (!wordRange) { continue; }
+
+			const word = document.getText(wordRange);
+			const match = word.match(matchRegex);
+			if (!match || !match[1]) { continue; }
+
+			const refText = match[1];
+
+			if (vscode.workspace.getConfiguration('yamlRefNavigator').get('debug')) {
+				vscode.window.showInformationMessage(`🔍 Found reference: ${refText}`);
+			}
+
+			const locations = await findAllYamlDefinitions(refText);
+			if (locations.length) { return locations; }
+		}
+		return null;
+
+		// // Figure out if we have a definition here
+		// const rangeRegex = /\$\{([a-zA-Z0-9_.:]+)\}/;
+		// const matchRegex = /^\$\{([a-zA-Z0-9_.:]+)\}$/;
+
+		// const wordRange = document.getWordRangeAtPosition(position, rangeRegex);
+		// if (!wordRange) { return null; }
+		// const match = document.getText(wordRange).match(matchRegex);
+		// if (!match) { return null; }
+		// const refText = match[1];
+
+		// // Mostly used for development
+		// if (vscode.workspace.getConfiguration('yamlRefNavigator').get('debug')) {
+		// 	vscode.window.showInformationMessage(`🔍 Looking for definition of "${refText}"`);
+		// }
+
+		// const locations = await findAllYamlDefinitions(refText);
+		// return locations.length ? locations : null;
 	}
 }
 

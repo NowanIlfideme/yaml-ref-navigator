@@ -1,0 +1,8 @@
+# Main configuration (for some hypothetical project)
+
+default_env: dev
+
+commands:
+  "run": "run.sh --autoreload ${flags.autoreload}"
+  "publish": "deploy.sh --env ${env}"
+  "deploy": "${commands.publish} && ${commands.run}"

@@ -40,7 +40,34 @@
           ".yml"
         ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "YAML Ref Navigator",
+      "properties": {
+        "yamlRefNavigator.referencePatterns": {
+          "type": "array",
+          "default": [
+            "\\$\\{([a-zA-Z0-9_.:]+)\\}"
+          ],
+          "description": "List of regex patterns with one capture group to match reference text."
+        },
+        "yamlRefNavigator.yamlVersion": {
+          "type": "string",
+          "default": "1.2",
+          "enum": [
+            "1.1",
+            "1.2",
+            "next"
+          ],
+          "description": "YAML spec version to use for parsing (passed to the YAML parser)."
+        },
+        "yamlRefNavigator.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug messages when resolving references."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
