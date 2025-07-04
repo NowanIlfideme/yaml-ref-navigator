@@ -159,23 +159,6 @@ class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 		}
 		return null;
 
-		// // Figure out if we have a definition here
-		// const rangeRegex = /\$\{([a-zA-Z0-9_.:]+)\}/;
-		// const matchRegex = /^\$\{([a-zA-Z0-9_.:]+)\}$/;
-
-		// const wordRange = document.getWordRangeAtPosition(position, rangeRegex);
-		// if (!wordRange) { return null; }
-		// const match = document.getText(wordRange).match(matchRegex);
-		// if (!match) { return null; }
-		// const refText = match[1];
-
-		// // Mostly used for development
-		// if (vscode.workspace.getConfiguration('yamlRefNavigator').get('debug')) {
-		// 	vscode.window.showInformationMessage(`🔍 Looking for definition of "${refText}"`);
-		// }
-
-		// const locations = await findAllYamlDefinitions(refText);
-		// return locations.length ? locations : null;
 	}
 }
 
