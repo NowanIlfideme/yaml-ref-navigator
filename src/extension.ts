@@ -19,10 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 	provideDefinition(document: vscode.TextDocument, position: vscode.Position) {
-		const wordRange = document.getWordRangeAtPosition(position, /\$\{?[a-zA-Z0-9_.:]+}?/);
+		const wordRange = document.getWordRangeAtPosition(position, /\$\{[a-zA-Z0-9_.:]+\}/);
 		if (!wordRange) { return; }
+		// finds ${foo.bar} and such
 
-		const refText = document.getText(wordRange).replace(/^\$\{?/, '').replace(/}?$/, '');
+		const match = document.getText(wordRange).match(/^\$\{([a-zA-Z0-9_.:]+)\}$/);
+		if (!match) { return; }
+
+		const refText = match[1];        // first sub-match, i.e. foo.bar
 
 		// Show a message so we know it ran
 		vscode.window.showInformationMessage(`🔍 Looking for definition of "${refText}"`);
