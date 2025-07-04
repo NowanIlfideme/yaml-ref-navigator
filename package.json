@@ -1,25 +1,32 @@
 {
   "name": "yaml-ref-navigator",
-  "displayName": "yaml-ref-navigator",
-  "description": "Helps navigate YAML references",
-  "version": "0.0.1",
+  "displayName": "YAML Reference Navigator",
+  "description": "Jump to definition for YAML references of form ${foo.bar}",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.101.0"
   },
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NowanIlfideme/yaml-ref-navigator"
+  },
+  "readme": "README.md",
+  "keywords": [
+    "yaml",
+    "references",
+    "navigator",
+    "definition",
+    "click"
+  ],
   "activationEvents": [
     "onLanguage:yaml"
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "yaml-ref-navigator.helloWorld",
-        "title": "Hello World"
-      }
-    ],
+    "commands": [],
     "languages": [
       {
         "id": "yaml",
