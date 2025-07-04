@@ -48,7 +48,7 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		assert.strictEqual(results[0].uri.fsPath, doc2.uri.fsPath, 'Definition should be in file2.yaml');
 	});
 
-	test('Ref1 points to foo.bar', async () => {
+	test('ref1 points to foo.bar', async () => {
 		// Simulate providing definition at the position of "ref1" key
 		const pos = doc1.getText().indexOf('${foo.bar}');
 		const position = doc1.positionAt(pos);
@@ -61,7 +61,7 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		assert.strictEqual(locations![0].uri.fsPath, doc1.uri.fsPath, 'Definition location should be in file1.yaml');
 	});
 
-	test('Ref2 points to baz.qux', async () => {
+	test('ref2 points to baz.qux', async () => {
 		const pos = doc2.getText().indexOf('${baz.qux}');
 		const position = doc2.positionAt(pos);
 		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
@@ -71,5 +71,29 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		);
 		assert(locations && locations.length > 0, 'Should find definitions');
 		assert.strictEqual(locations![0].uri.fsPath, doc2.uri.fsPath, 'Definition location should be in file2.yaml');
+	});
+
+	test('ref3-to-1 points to foo.bar', async () => {
+		const pos = doc3.getText().indexOf('${foo.bar}');
+		const position = doc3.positionAt(pos);
+		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+			'vscode.executeDefinitionProvider',
+			doc3.uri,
+			position
+		);
+		assert(locations && locations.length > 0, 'Should find definitions');
+		assert.strictEqual(locations![0].uri.fsPath, doc1.uri.fsPath, 'Definition location should be in file1.yaml');
+	});
+
+	test('ref3-to-2 points to foo.bar', async () => {
+		const pos = doc3.getText().indexOf('${baz.qux}');
+		const position = doc3.positionAt(pos);
+		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+			'vscode.executeDefinitionProvider',
+			doc3.uri,
+			position
+		);
+		assert(locations && locations.length > 0, 'Should find definitions');
+		assert.strictEqual(locations![0].uri.fsPath, doc2.uri.fsPath, 'Definition location should be in file1.yaml');
 	});
 });
