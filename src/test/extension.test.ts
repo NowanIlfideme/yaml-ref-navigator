@@ -36,6 +36,8 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		await vscode.window.showTextDocument(doc3, { preview: false });
 	});
 
+	// Positive cases
+
 	test('Find foo.bar in file1.yaml', async () => {
 		const results = await findAllYamlDefinitions('foo.bar');
 		assert.strictEqual(results.length, 1, 'Should find exactly one definition');
@@ -47,6 +49,15 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		assert.strictEqual(results.length, 1, 'Should find exactly one definition');
 		assert.strictEqual(results[0].uri.fsPath, doc2.uri.fsPath, 'Definition should be in file2.yaml');
 	});
+
+	// Negative cases
+
+	test('Missing reference returns no result', async () => {
+		const results = await findAllYamlDefinitions('no.such.key');
+		assert.strictEqual(results.length, 0, 'Should return no definitions for nonexistent key');
+	});
+
+	// 
 
 	test('ref1 points to foo.bar', async () => {
 		// Simulate providing definition at the position of "ref1" key
@@ -74,7 +85,7 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 	});
 
 	test('ref3-to-1 points to foo.bar', async () => {
-		const pos = doc3.getText().indexOf('${foo.bar}');
+		const pos = doc3.getText().indexOf('${foo}');
 		const position = doc3.positionAt(pos);
 		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
 			'vscode.executeDefinitionProvider',
@@ -96,4 +107,23 @@ suite('YAML Ref Navigator Multi-File Tests', () => {
 		assert(locations && locations.length > 0, 'Should find definitions');
 		assert.strictEqual(locations![0].uri.fsPath, doc2.uri.fsPath, 'Definition location should be in file1.yaml');
 	});
+
+	// Negative tests
+
+	test('No definition found via definition provider', async () => {
+		const doc3 = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file3.yaml'));
+		await vscode.window.showTextDocument(doc3);
+
+		const pos = doc3.getText().indexOf('${no.such.key}');
+		const position = doc3.positionAt(pos);
+
+		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+			'vscode.executeDefinitionProvider',
+			doc3.uri,
+			position
+		);
+
+		assert(!locations || locations.length === 0, 'Should return no definition via provider');
+	});
+
 });

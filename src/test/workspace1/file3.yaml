@@ -1,3 +1,4 @@
 # Reference the other files
-ref3-to-1: ${foo.bar}
+ref3-to-1: ${foo}
 ref3-to-2: ${baz.qux}
+ref3-bad: ${no.such.key}
