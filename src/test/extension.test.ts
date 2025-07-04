@@ -8,122 +8,78 @@ import * as path from 'path';
 import { findAllYamlDefinitions } from '../extension'; // Adjust path if needed
 
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
-
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
-});
-
-
 suite('YAML Ref Navigator Multi-File Tests', () => {
 	const workspaceRoot = path.join(__dirname, 'workspace1');
+	let documents: Record<string, vscode.TextDocument> = {};
 
-	let doc1: vscode.TextDocument;
-	let doc2: vscode.TextDocument;
-	let doc3: vscode.TextDocument;
 
 	suiteSetup(async () => {
-		// Open the files as vscode documents
-		doc1 = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file1.yaml'));
-		doc2 = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file2.yaml'));
-		doc3 = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file3.yaml'));
-
-		// Show documents in editor so they appear "open"
-		await vscode.window.showTextDocument(doc1, { preview: false });
-		await vscode.window.showTextDocument(doc3, { preview: false });
+		for (const file of ['file1.yaml', 'file2.yaml', 'file3.yaml']) {
+			const fullPath = path.join(workspaceRoot, file);
+			const doc = await vscode.workspace.openTextDocument(fullPath);
+			await vscode.window.showTextDocument(doc, { preview: false });
+			documents[file] = doc;
+		}
 	});
 
-	// Positive cases
+	// findAllYamlDefinitions
 
-	test('Find foo.bar in file1.yaml', async () => {
-		const results = await findAllYamlDefinitions('foo.bar');
-		assert.strictEqual(results.length, 1, 'Should find exactly one definition');
-		assert.strictEqual(results[0].uri.fsPath, doc1.uri.fsPath, 'Definition should be in file1.yaml');
+	const definitionTests = [
+		{ ref: 'foo.bar', expectedFile: 'file1.yaml' },
+		{ ref: 'baz.qux', expectedFile: 'file2.yaml' },
+		{ ref: 'no.such.key', expectedFile: null }, // negative test
+	];
+
+	definitionTests.forEach(({ ref, expectedFile }) => {
+		const label = expectedFile
+			? `findAllYamlDefinitions: ${ref} → ${expectedFile}`
+			: `findAllYamlDefinitions: ${ref} → no match`;
+
+		test(label, async () => {
+			const results = await findAllYamlDefinitions(ref);
+			if (expectedFile) {
+				assert.strictEqual(results.length, 1, 'Should find exactly one definition');
+				assert(results[0].uri.fsPath.endsWith(expectedFile), `Expected match in ${expectedFile}`);
+			} else {
+				assert.strictEqual(results.length, 0, 'Should return no matches');
+			}
+		});
 	});
 
-	test('Find baz.qux in file2.yaml', async () => {
-		const results = await findAllYamlDefinitions('baz.qux');
-		assert.strictEqual(results.length, 1, 'Should find exactly one definition');
-		assert.strictEqual(results[0].uri.fsPath, doc2.uri.fsPath, 'Definition should be in file2.yaml');
+	// definition provider
+
+	const definitionProviderTests = [
+		{ file: 'file1.yaml', refText: '${foo.bar}', expectedFile: 'file1.yaml' },
+		{ file: 'file2.yaml', refText: '${baz.qux}', expectedFile: 'file2.yaml' },
+		{ file: 'file3.yaml', refText: '${foo}', expectedFile: 'file1.yaml' },
+		{ file: 'file3.yaml', refText: '${baz.qux}', expectedFile: 'file2.yaml' },
+		{ file: 'file3.yaml', refText: '${no.such.key}', expectedFile: null },
+	];
+
+	definitionProviderTests.forEach(({ file, refText, expectedFile }) => {
+		const label = expectedFile
+			? `DefinitionProvider: ${refText} in ${file} → ${expectedFile}`
+			: `DefinitionProvider: ${refText} in ${file} → no match`;
+
+		test(label, async () => {
+			const doc = documents[file];
+			const offset = doc.getText().indexOf(refText);
+			assert(offset !== -1, `Reference text "${refText}" not found in ${file}`);
+			const cursorPosition = doc.positionAt(offset);
+
+			const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+				'vscode.executeDefinitionProvider',
+				doc.uri,
+				cursorPosition
+			);
+
+			if (expectedFile) {
+				assert(locations && locations.length > 0, 'Expected definition(s)');
+				assert(locations!.some(loc => loc.uri.fsPath.endsWith(expectedFile)),
+					`Expected a definition in ${expectedFile}`);
+			} else {
+				assert(!locations || locations.length === 0, 'Expected no definitions');
+			}
+		});
 	});
-
-	// Negative cases
-
-	test('Missing reference returns no result', async () => {
-		const results = await findAllYamlDefinitions('no.such.key');
-		assert.strictEqual(results.length, 0, 'Should return no definitions for nonexistent key');
-	});
-
-	// 
-
-	test('ref1 points to foo.bar', async () => {
-		// Simulate providing definition at the position of "ref1" key
-		const pos = doc1.getText().indexOf('${foo.bar}');
-		const position = doc1.positionAt(pos);
-		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-			'vscode.executeDefinitionProvider',
-			doc1.uri,
-			position
-		);
-		assert(locations && locations.length > 0, 'Should find definitions');
-		assert.strictEqual(locations![0].uri.fsPath, doc1.uri.fsPath, 'Definition location should be in file1.yaml');
-	});
-
-	test('ref2 points to baz.qux', async () => {
-		const pos = doc2.getText().indexOf('${baz.qux}');
-		const position = doc2.positionAt(pos);
-		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-			'vscode.executeDefinitionProvider',
-			doc2.uri,
-			position
-		);
-		assert(locations && locations.length > 0, 'Should find definitions');
-		assert.strictEqual(locations![0].uri.fsPath, doc2.uri.fsPath, 'Definition location should be in file2.yaml');
-	});
-
-	test('ref3-to-1 points to foo.bar', async () => {
-		const pos = doc3.getText().indexOf('${foo}');
-		const position = doc3.positionAt(pos);
-		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-			'vscode.executeDefinitionProvider',
-			doc3.uri,
-			position
-		);
-		assert(locations && locations.length > 0, 'Should find definitions');
-		assert.strictEqual(locations![0].uri.fsPath, doc1.uri.fsPath, 'Definition location should be in file1.yaml');
-	});
-
-	test('ref3-to-2 points to foo.bar', async () => {
-		const pos = doc3.getText().indexOf('${baz.qux}');
-		const position = doc3.positionAt(pos);
-		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-			'vscode.executeDefinitionProvider',
-			doc3.uri,
-			position
-		);
-		assert(locations && locations.length > 0, 'Should find definitions');
-		assert.strictEqual(locations![0].uri.fsPath, doc2.uri.fsPath, 'Definition location should be in file1.yaml');
-	});
-
-	// Negative tests
-
-	test('No definition found via definition provider', async () => {
-		const doc3 = await vscode.workspace.openTextDocument(path.join(workspaceRoot, 'file3.yaml'));
-		await vscode.window.showTextDocument(doc3);
-
-		const pos = doc3.getText().indexOf('${no.such.key}');
-		const position = doc3.positionAt(pos);
-
-		const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-			'vscode.executeDefinitionProvider',
-			doc3.uri,
-			position
-		);
-
-		assert(!locations || locations.length === 0, 'Should return no definition via provider');
-	});
-
 });
