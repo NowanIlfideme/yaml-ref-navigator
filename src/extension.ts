@@ -79,6 +79,56 @@ export async function findAllYamlDefinitions(refText: string): Promise<vscode.Lo
 	return results;
 }
 
+// Helper function to get possible patterns
+
+type ValidatedPattern = {
+	raw: string;
+	rangeRegex: RegExp;
+	matchRegex: RegExp;
+};
+
+function validateUserPatterns(): ValidatedPattern[] {
+	const configPatterns: string[] =
+		vscode.workspace.getConfiguration('yamlRefNavigator').get('referencePatterns') || [];
+
+	const valid: ValidatedPattern[] = [];
+
+	for (const pattern of configPatterns) {
+		try {
+			const regex = new RegExp(pattern);
+
+			// Count capture groups
+			const captureCount = (pattern.match(/\((?!\?:)/g) || []).length;
+
+			if (captureCount !== 1) {
+				vscode.window.showWarningMessage(
+					`YAML Ref Navigator: Skipping pattern "${pattern}" — must have exactly 1 capture group.`
+				);
+				continue;
+			}
+
+			if (pattern.startsWith('^') || pattern.endsWith('$')) {
+				vscode.window.showWarningMessage(
+					`YAML Ref Navigator: Pattern "${pattern}" should not be anchored — it won't work with word detection.`
+				);
+				continue;
+			}
+
+			const rangeRegex = regex;
+			const matchRegex = new RegExp(`^${pattern}$`);
+
+			valid.push({ raw: pattern, rangeRegex, matchRegex });
+		} catch (err) {
+			vscode.window.showWarningMessage(
+				`YAML Ref Navigator: Invalid regex pattern "${pattern}": ${(err as Error).message}`
+			);
+		}
+	}
+
+	return valid;
+}
+
+// This guy does most of the heavy lifting:
 
 class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 	async provideDefinition(
@@ -86,15 +136,11 @@ class ReferenceDefinitionProvider implements vscode.DefinitionProvider {
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 	): Promise<vscode.Definition | null> {
-		const patternStrings: string[] = vscode.workspace.getConfiguration('yamlRefNavigator').get('referencePatterns') || [];
+		const patterns = validateUserPatterns();
 
-		for (const pattern of patternStrings) {
-			const rangeRegex = new RegExp(pattern);
-
-			// Auto-anchor for matchRegex
-			const isAnchored = pattern.startsWith('^') || pattern.endsWith('$');
-			const matchRegex = new RegExp(isAnchored ? pattern : `^${pattern}$`);
-
+		// Greedily check patterns (faster than checking all patterns always)
+		for (const { rangeRegex, matchRegex } of patterns) {
+			// Check if the regex works here
 			const wordRange = document.getWordRangeAtPosition(position, rangeRegex);
 			if (!wordRange) { continue; }
 
