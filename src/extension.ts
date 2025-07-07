@@ -58,17 +58,26 @@ export async function findYamlDefinitionInFile(refText: string, uri: vscode.Uri,
 export async function findAllYamlDefinitions(refText: string): Promise<vscode.Location[]> {
 	const results: vscode.Location[] = [];
 
-	// 1. Search open documents
+	const suffixes: string[] = vscode.workspace.getConfiguration('yamlRefNavigator').get('fileExtensions', ['.yaml', '.yml']);
+
+	// 1. Search open documents, filtering by file extension or language ID (because they might not have a .YAML extension)
 	for (const doc of vscode.workspace.textDocuments) {
-		if (!doc.fileName.endsWith('.yaml') && !doc.fileName.endsWith('.yml')) { continue; }
+
+		if (!suffixes.some(ext => doc.fileName.endsWith(ext)) && (doc.languageId !== 'yaml')) { continue; }
+
 		const matches = await findYamlDefinitionInFile(refText, doc.uri, doc.getText());
 		results.push(...matches);
 	}
 
 	// 2. Search YAML files in workspace (skip already-open ones)
-	const files = await vscode.workspace.findFiles('**/*.y?(a)ml');
+	const files: vscode.Uri[] = [];
+	for (const ext of suffixes) {
+		const found = await vscode.workspace.findFiles(`**/*${ext}`, null);
+		files.push(...found);
+	}
 	const openPaths = new Set(vscode.workspace.textDocuments.map(doc => doc.uri.fsPath));
 
+	// 3. Find all matches in these files
 	for (const file of files) {
 		if (openPaths.has(file.fsPath)) { continue; } // skip duplicates
 		const content = fs.readFileSync(file.fsPath, 'utf-8');

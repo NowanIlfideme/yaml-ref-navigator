@@ -45,6 +45,17 @@
     "configuration": {
       "title": "YAML Ref Navigator",
       "properties": {
+        "yamlRefNavigator.fileExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".yaml",
+            ".yml"
+          ],
+          "description": "File extensions to include for YAML reference scanning."
+        },
         "yamlRefNavigator.referencePatterns": {
           "type": "array",
           "default": [

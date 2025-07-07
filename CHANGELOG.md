@@ -8,11 +8,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [UNRELEASED]
 
+## [0.2.3] - 2025-07-07
+
+### Added
+
+- New configuration option `yamlRefNavigator.fileExtensions`: A list of file extensions (for files on disk).
+
+### Fixed
+
+- Ensured references to files that weren't opened.
+
 ## [0.2.2] - 2025-07-04
 
 ### Changed
 
-Improved documentation, including example gifs.
+- Improved documentation, including example gifs.
 
 ## [0.2.1] - 2025-07-04
 

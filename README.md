@@ -37,6 +37,7 @@ extension, which uses `yaml-language-server`.
 ## Extension Settings
 
 - `yamlRefNavigator.yamlVersion` : The default YAML document version. '1.2' is recommended and default.
+- `yamlRefNavigator.fileExtensions` : The file extensions to consider as YAML documents, e.g. `[".yaml", ".yml"]`
 - `yamlRefNavigator.referencePatterns` : A list of regular expression patterns
   that we will parse as a YAML reference pattern. These expressions must have exactly one capture group
   and not be anchored. The default is `"\\$\\{([a-zA-Z0-9_\\-.]+)\\}"` such as `${foo.bar-baz.MyName9}`.
@@ -53,6 +54,10 @@ extension, which uses `yaml-language-server`.
 ## Release Notes
 
 See the [changelog](./CHANGELOG.md) for more details.
+
+### 0.2.3
+
+Fixed searching in unopened files. Added configuration options for file types.
 
 ### 0.2.2
 
